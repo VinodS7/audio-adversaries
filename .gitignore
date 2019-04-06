@@ -104,15 +104,12 @@ venv.bak/
 .mypy_cache/
 
 #data files
-.csv
-.h5
-<<<<<<< HEAD
-.meta
-.data-00000-of-00001
-.index
-
+*.csv
+*.h5
+*.meta
+*.data-00000-of-00001
+*.index
+*.wav
 #folders
 models/
 split/
-=======
->>>>>>> 28042f12453a307829b10ed802856621b71f43f0
