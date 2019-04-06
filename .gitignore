@@ -102,3 +102,14 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+#data files
+.csv
+.h5
+.meta
+.data-00000-of-00001
+.index
+
+#folders
+models/
+split/
