@@ -1,3 +1,5 @@
+
+*~
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -110,7 +112,6 @@ venv.bak/
 *.data-00000-of-00001
 *.index
 *.wav
-*~
 #folders
 models/
 split/
