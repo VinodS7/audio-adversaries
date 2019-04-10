@@ -37,6 +37,7 @@ class CarliniWagnerAttack():
         
         saver = self.model.build_graph(self.newpcm)
         self.output = self.model.get_logits()
+        self.probs = self.model.get_probs()
 
         self.other = (tf.tanh(self.original_audio)+1)/2.0*(self.clip_max-self.clip_min)+self.clip_min
 
@@ -64,9 +65,9 @@ class CarliniWagnerAttack():
         return saver
     
     
-    def attack(self,sess,input_audio,labels,batch_size):
+    def attack(self,sess,input_audio,label,labels,batch_size):
         
-        lab = int(np.mean(labels))
+        lab = label
         def compare(x, y):
             if not isinstance(x, (float, int, np.int64)):
                 x = np.copy(x)
@@ -89,7 +90,6 @@ class CarliniWagnerAttack():
         b = np.zeros((batch_size, 41))
         b[np.arange(batch_size), labels] = 1
         labels = b
-        
         self.repeat = self.binary_search_steps>=10
         
         
@@ -105,6 +105,18 @@ class CarliniWagnerAttack():
             
         for outer_step in range(self.binary_search_steps):
             sess.run([self.init],feed_dict={self.modifier_init:input_audio.shape})
+            if(outer_step == 0):
+                s = sess.run([self.probs],feed_dict={self.pcm:input_audio})
+                s = np.squeeze(s)
+                if(s.ndim==1):
+                    print(np.argmax(s),np.max(s))
+                else:
+                    print(np.argmax(s,axis=1),np.max(s,axis=1))
+                    s = np.mean(s,axis=0)
+                original_label = np.argmax(s)
+                original_confidence = np.max(s)
+
+                     
             audio = input_audio
             bestl2 = 1e10
             bestscore = -1 
@@ -114,12 +126,12 @@ class CarliniWagnerAttack():
 
             prev = 1e6
             for iteration in range(self.max_iterations):
-                _,l,l2,score,npcm = sess.run([self.train,self.loss,self.l2dist,self.output,self.newpcm],feed_dict={self.pcm:audio,self.original_audio:original_audio,self.labels:labels,self.const:CONST})
+                _,l,l2,score,npcm = sess.run([self.train,self.loss,self.l2dist,self.probs,self.newpcm],feed_dict={self.pcm:audio,self.original_audio:original_audio,self.labels:labels,self.const:CONST})
                     
                 l = np.squeeze(l)
                 l2 = np.squeeze(l2)
                 score = np.squeeze(score)
-                score = np.exp(score)/sum(np.exp(score))
+                s = score
                 if(score.ndim !=1):
                     score = np.mean(score,axis=0)
                 if(iteration % ((self.max_iterations//10) or 1)==0):
@@ -144,15 +156,14 @@ class CarliniWagnerAttack():
                     o_bestl2 = l2
                     o_bestscore = np.argmax(score)
                     o_bestattack = npcm
-
-                    s = sess.run([self.output],feed_dict={self.pcm:audio})
-                    s = np.squeeze(s)
-                    s = np.exp(s)/sum(np.exp(s))
+                    new_label = np.argmax(score)
+                    new_confidence = np.max(score)
                     if(s.ndim==1):
                         print(np.argmax(s),np.max(s),l2)
                     else:
-                        print(np.argmax(s,axis=1),np.max(s,axis=1),l2)
-
+                        print(np.argmax(s,axis=1),np.max(s,axis=1),l2,np.argmax(score),np.max(score))
+                        print(score)
+                    
 
 
             if(compare(int(bestscore),lab) and bestscore !=-1):
@@ -168,4 +179,4 @@ class CarliniWagnerAttack():
 
                 o_bestl2 = np.array(o_bestl2)
                 
-        return o_bestattack
+        return o_bestattack,original_label,original_confidence,new_label,new_confidence
