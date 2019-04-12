@@ -6,7 +6,7 @@ import pandas as pd
 import os
 import librosa
 from tqdm import tqdm
-
+import time
 
 import config as cfg
 import file_io as io
@@ -35,8 +35,7 @@ def deepfoolattack(audio_path,metadata_path,model_path,exp_data_path,adv_audio_p
     original_confidence = []
     new_label = []
     new_confidence = []
-    mean_sq_error = []
-    std_dev = []
+    new_o_label_conf = []
     snr = []
     with tf.Graph().as_default() as graph:
         mel_filt = tf.convert_to_tensor(mel_fb,dtype=tf.float32)
@@ -61,39 +60,36 @@ def deepfoolattack(audio_path,metadata_path,model_path,exp_data_path,adv_audio_p
             if (s.ndim != 1):
                 s = np.mean(s,axis=0)
                       
-            if(np.argmax(s) == labels):
                 
-                print('Iteration number:',i)
-                print('Original label number:',np.argmax(s))
-                print('Original label confidence:',np.max(s))
+            print('Original label number:',np.argmax(s))
+            print('Original label confidence:',np.max(s))
                 
+            tic = time.process_time()
+            adv = deepfool.attack(sess,data,int(q))
+            toc = time.process_time()
 
-                adv = deepfool.attack(sess,data,int(q))
-                
-                preds = sess.run([model.get_probs()],feed_dict={pcm:adv})
-                preds = np.squeeze(preds)
+            print('Time for processing sample:',toc-tic,'for iteration:',i)
+            preds = sess.run([model.get_probs()],feed_dict={pcm:adv})
+            preds = np.squeeze(preds)
 
-                if(preds.ndim !=1):
-                    preds = np.mean(preds,axis=0)
-
-                print('New label number:',np.argmax(preds))
-                print('New label confidence:',np.max(preds))
+            if(preds.ndim !=1):
+                preds = np.mean(preds,axis=0)
+            print('New label number:',np.argmax(preds))
+            print('New label confidence:',np.max(preds))
                 
-                if(save_data):
-                    librosa.output.write_wav(adv_audio_path + 'adv-' + audio_file_name,adv,sample_rate)
-                audio_name.append(audio_file_name)
-                audio_length.append(int(q))
-                original_label.append(np.argmax(s))
-                original_confidence.append(np.max(s))
-                new_label.append(np.argmax(preds))
-                new_confidence.append(np.max(preds))
-                mean_sq_error.append(np.mean((adv-data)**2))
-                std_dev.append(np.std((adv-data)**2))
-                snr.append(20*np.log10(np.mean(data**2)/(np.mean(adv-data)**2)))
-            else: 
-                print(audio_file_name, 'Predicted label doesn\'t match the ground truth so adversarial attack is meaningless')
+            if(save_data):
+                librosa.output.write_wav(adv_audio_path + 'adv-' + audio_file_name,adv,sample_rate)
+                
+            audio_name.append(audio_file_name)
+            audio_length.append(int(q))
+            original_label.append(np.argmax(s))
+            original_confidence.append(np.max(s))
+            new_label.append(np.argmax(preds))
+            new_confidence.append(np.max(preds))
+            new_o_label_conf.append(preds[np.argmax(s)])
+            snr.append(20*np.log10(np.mean(data**2)/(np.mean((adv-data)**2))))
         if(save_data):
-            df_deepfool = pd.DataFrame({'audio_name':audio_name,'audio_length':audio_length,'original_label':original_label,'original_confidence':original_confidence,'new_label':new_label,'new_confidence':new_confidence,'mean_square_error':mean_sq_error,'standard_deviation':std_dev,'SNR':snr})
+            df_deepfool = pd.DataFrame({'audio_name':audio_name,'audio_length':audio_length,'original_label':original_label,'original_confidence':original_confidence,'new_label':new_label,'new_confidence':new_confidence,'new_orig_conf':new_o_label_conf,'SNR':snr})
         
             with open(exp_data_path,'a') as f:
                 df_deepfool.to_csv(f,header=False)
