@@ -48,3 +48,19 @@ class CleverHansModel():
     def get_probs(self):                
         return tf.get_default_graph().get_tensor_by_name('dense_1/Softmax:0')
 
+class CochlearModel():
+
+    def __init__(self,checkpoint):
+        self.checkpoint = checkpoint
+
+    def build_graph(self,pcm):
+        self.saver = tf.train.import_meta_graph(self.checkpoint,input_map={'input_1:0':pcm})
+        return self.saver
+
+        
+    def get_logits(self):
+        return tf.get_default_graph().get_tensor_by_name('average_1/truediv:0')
+
+    def get_probs(self):                
+        return tf.get_default_graph().get_tensor_by_name('average_1/truediv:0')
+
