@@ -39,18 +39,21 @@ class DeepFool():
         current = np.argmax(current)
 
         w = np.squeeze(np.zeros(sample.shape))
-        r_tot = np.zeros(sample.shape)
+        r_tot = np.squeeze(np.zeros(sample.shape))
         original = current
         while(np.any(current==original) and iteration <self.max_iter):
 
-            gradients = np.zeros([batch_size,self.nb_classes,adv_x.shape[0]])
+            gradients = np.zeros([batch_size,self.nb_classes,np.max(adv_x.shape)])
             for idx in range(batch_size):
                 predictions,g = sess.run([self.logits,self.grads],feed_dict={self.pcm:adv_x,self.batch_iter:idx})      
-                gradients[idx,:,:] = np.transpose(g)
+                g = np.squeeze(g)
+                if(g.shape[0] != self.nb_classes):
+                    g = np.transpose(g)
+                gradients[idx,:,:] = g
             
             pert = np.inf
 
-            w_k = np.zeros([batch_size,self.nb_classes,adv_x.shape[0]])
+            w_k = np.zeros([batch_size,self.nb_classes,np.max(adv_x.shape)])
             pert_k = np.zeros([batch_size,self.nb_classes])
 
             for idx in range(batch_size):
