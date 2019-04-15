@@ -100,7 +100,10 @@ class CarliniWagnerAttack():
         o_bestl2 = [1e10]
         o_bestscore = [-1]
         o_bestattack = np.copy(original_audio)
-
+        
+        new_label = None
+        new_confidence = None
+        new_confidence_original_label = None
 
             
         for outer_step in range(self.binary_search_steps):

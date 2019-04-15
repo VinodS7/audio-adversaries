@@ -106,7 +106,7 @@ def carliniwagneruntargeted(audio_path,metadata_path,model_path,exp_data_path,ad
         saver = carliniwagner.build_attack(pcm)
     with tf.Session(graph=graph) as sess:
         saver.restore(sess,model_path)
-        for i in range(1):
+        for i in range(df.shape[0]):
             audio_file_name = file_names[i]
             try:
                 data,q = utils_tf._preprocess_data(audio_path,audio_file_name)
@@ -137,7 +137,6 @@ def carliniwagneruntargeted(audio_path,metadata_path,model_path,exp_data_path,ad
             new_confidence.append(n_conf)
             new_o_label_conf.append(n_conf_gt)
             snr.append(10*np.log10(np.mean(data**2)/(np.mean((adv-data)**2))))
-            print(snr)
         if(save_data):
             df_cw = pd.DataFrame({'audio_name':audio_name,'audio_length':audio_length,'original_label':original_label,'original_confidence':original_confidence,'new_label':new_label,'new_confidence':new_confidence,'new_orig_conf':new_o_label_conf,'SNR':snr})
         
