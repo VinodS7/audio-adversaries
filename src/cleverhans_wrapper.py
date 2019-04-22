@@ -60,7 +60,6 @@ class CochlearModel():
         
     def get_logits(self):
         return tf.get_default_graph().get_tensor_by_name('average_1/truediv:0')
-
     def get_probs(self):                
         return tf.get_default_graph().get_tensor_by_name('average_1/truediv:0')
 

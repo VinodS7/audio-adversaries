@@ -20,7 +20,6 @@ from cleverhans_wrapper import CleverHansModel,CochlearModel
 def deepfoolattack(audio_path,metadata_path,model_path,exp_data_path,adv_audio_path,save_data=False):
     #Run the attacks to generate adversarial attacks on manually verified examples on the training and test data
     #Load dataset to normalize new data
-    print(save_data)
     x,_ = utils_tf._load_dataset(cfg.to_dataset('training'))
     generator = utils.fit_scaler(x)
     df = pd.read_csv(metadata_path)
@@ -46,7 +45,7 @@ def deepfoolattack(audio_path,metadata_path,model_path,exp_data_path,adv_audio_p
         deepfool.build_attack(pcm)
     with tf.Session(graph=graph) as sess:
         saver.restore(sess,model_path)
-        for i in range(2,3):
+        for i in range(df.shape[0]):
             audio_file_name = file_names[i]
             try:
                 data,q = utils_tf._preprocess_data(audio_path,audio_file_name)
@@ -119,7 +118,7 @@ def deepfoolcochlear(audio_path,metadata_path,model_path,exp_data_path,adv_audio
         deepfool.build_attack(pcm)
     with tf.Session(graph=graph) as sess:
         saver.restore(sess,model_path)
-        for i in range(df.shape[0]):
+        for i in range(1,2):
             audio_file_name = file_names[i]
             try:
                 data,q = utils_tf._preprocess_data(audio_path,audio_file_name)
@@ -129,7 +128,7 @@ def deepfoolcochlear(audio_path,metadata_path,model_path,exp_data_path,adv_audio
  
             labels= utils_tf._convert_label_name_to_label(label_names[i])
             s = sess.run([model.get_probs()],feed_dict={'input_audio:0':data})
-            
+
             s = np.squeeze(s)
             if (s.ndim != 1):
                 s = np.mean(s,axis=0)

@@ -47,7 +47,7 @@ def _load_dataset(dataset):
 
 def _preprocess_data(audio_path,audio_file_name):
     filelist = os.listdir(audio_path)
-    print('Audio file name:', audio_file_name)
+    #print('Audio file name:', audio_file_name)
     
 
     audio_file_path = os.path.join(audio_path,audio_file_name)
@@ -121,7 +121,7 @@ def _reshape_spec(feat,r_threshold=32):
     q = feat.shape[0] // 128
     r = feat.shape[0] % 128
     r_threshold = 32
-    print(q,r)
+    #print(q,r)
 
     if not q:
         split = [utils.pad_truncate(feat, 128, pad_value=np.min(feat))]
