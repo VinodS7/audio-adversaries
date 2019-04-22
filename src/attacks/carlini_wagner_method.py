@@ -64,17 +64,21 @@ class CarliniWagnerAttack():
         return saver
     
     
-    def attack(self,sess,input_audio,label,labels,batch_size):
-        print('Audio len:',input_audio.shape) 
+    def attack(self,sess,input_audio,label,labels,batch_size,prob_thresh):
         lab = label
-        def compare(x, y):
+        def compare(x, y,prob_thresh = 0.7):
             if not isinstance(x, (float, int, np.int64)):
                 x = np.copy(x)
                 if self.targeted:
-                    x[y] -= self.confidence
+                    if(x[y]>=prob_thresh):
+                        return True
+                    else:
+                        return False
                 else:
-                    x[y] += self.confidence
-                x = np.argmax(x)
+                    if(x[y]<prob_thresh and np.argmax(x) != y):
+                        return True
+                    else:
+                        return False
             if self.targeted:
                 return x == y
             else:
@@ -152,11 +156,10 @@ class CarliniWagnerAttack():
                         break
 
                     prev = l
-                if(l2<bestl2 and compare(score,lab)):
+                if(l2<bestl2 and compare(score,lab,prob_thresh)):
                     bestl2 = l2
                     bestscore = np.argmax(score)
-
-                if(l2<o_bestl2 and compare(score,lab)):
+                if(l2<o_bestl2 and compare(score,lab,prob_thresh)):
                     o_bestl2 = l2
                     o_bestscore = np.argmax(score)
                     o_bestattack = npcm
