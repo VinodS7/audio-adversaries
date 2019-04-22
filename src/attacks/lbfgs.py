@@ -20,7 +20,7 @@ class LBFGS():
         self.logits = self.model.get_logits()
         self.targeted_label = tf.placeholder(tf.int64,shape=[None],name="label_names")
         self.shape = tuple(list(self.pcm.get_shape().as_list()))
-        self.original_audio = tf.placeholder(tf.float32,shape=[None],name='original_audio')
+        self.original_audio = tf.placeholder(tf.float32,shape=pcm.shape,name='original_audio')
         self.const = tf.placeholder(tf.float32,name = 'const')
         self.score = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.targeted_label,logits=self.logits)
         self.l2dist = tf.reduce_sum(tf.square(self.pcm - self.original_audio))
@@ -81,13 +81,11 @@ class LBFGS():
 
             l2 = np.mean(np.square(adv_x - oaudio))
             
-            print(l2,o_bestl2,preds,targets)
 
             target = int(np.mean(targets)) 
             if(l2<o_bestl2 and preds == target):
                 o_bestl2 = l2
                 o_bestattack = adv_x
-                print('Fooled!')
 
             if(preds == target):
                 upper_bound = min(upper_bound, CONST)
@@ -104,5 +102,4 @@ class LBFGS():
             mean = np.mean(np.sqrt(o_bestl2[o_bestl2<1e9]))
                  
         o_bestl2 =  np.array(o_bestl2)
-        print(np.mean(oaudio-adv_x))
         return o_bestattack
